@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vibery Kernel — Declare a resource, ship a product surface</title>
+<meta name="description" content="A Go backend kernel distilled from two production systems. Declare one Resource; the kernel emits REST + MCP + tenancy + events + audit + metering — zero per-resource wiring." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#070a0f;
+    --bg-soft:#0c1119;
+    --panel:#0f1620;
+    --panel-2:#131c28;
+    --line:#1d2836;
+    --line-2:#27374a;
+    --ink:#e8eef6;
+    --ink-soft:#aebbce;
+    --ink-dim:#6c7d93;
+    --accent:#33e0a1;        /* emerald — committed */
+    --accent-deep:#11b07b;
+    --accent-glow:rgba(51,224,161,.18);
+    --amber:#ffd479;
+    --rest:#7dd3fc;
+    --mcp:#c4b5fd;
+    --tenant:#fca5a5;
+    --event:#fcd34d;
+    --audit:#86efac;
+    --radius:14px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(900px 520px at 78% -8%, var(--accent-glow), transparent 60%),
+      radial-gradient(700px 500px at 6% 8%, rgba(125,211,252,.07), transparent 55%);
+  }
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 26px}
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3{line-height:1.12;letter-spacing:-.02em;margin:0}
+  code,.mono{font-family:var(--mono)}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);font-weight:500;
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(7,10,15,.72);border-bottom:1px solid var(--line);
+  }
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:-.01em}
+  .brand svg{display:block}
+  .brand .k{color:var(--ink)}
+  .brand .v{color:var(--accent)}
+  .nav-links{display:flex;gap:26px;align-items:center}
+  .nav-links a{color:var(--ink-soft);font-size:14px;font-weight:500;transition:color .15s}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-cta{
+    font-family:var(--mono);font-size:13px;color:var(--accent);
+    border:1px solid var(--line-2);padding:7px 13px;border-radius:9px;transition:.18s;
+  }
+  .nav-cta:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+  @media(max-width:820px){.nav-links a:not(.nav-cta){display:none}}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:74px 0 36px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 1.1fr;gap:46px;align-items:center}
+  @media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:34px}}
+  .badge{
+    display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+    color:var(--ink-soft);background:var(--panel);border:1px solid var(--line);
+    padding:6px 12px;border-radius:999px;margin-bottom:22px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .hero h1{font-size:clamp(34px,5vw,54px);font-weight:800}
+  .hero h1 .grad{
+    background:linear-gradient(120deg,var(--accent),#9ff7d6 60%,var(--rest));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p.lede{font-size:18px;color:var(--ink-soft);margin:20px 0 8px;max-width:32em}
+  .hero .sub{font-size:14.5px;color:var(--ink-dim);max-width:34em;margin-top:10px}
+  .hero-cta{display:flex;gap:13px;margin-top:30px;flex-wrap:wrap}
+  .btn{
+    font-weight:600;font-size:14.5px;padding:12px 20px;border-radius:11px;transition:.18s;cursor:pointer;
+    display:inline-flex;align-items:center;gap:9px;border:1px solid transparent;
+  }
+  .btn-primary{background:var(--accent);color:#06231a;font-weight:700}
+  .btn-primary:hover{box-shadow:0 8px 26px -8px var(--accent);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--ink-soft);background:var(--panel)}
+
+  /* code card */
+  .codecard{
+    background:linear-gradient(180deg,#0d141d,#0a0f16);
+    border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.7),0 0 0 1px rgba(51,224,161,.05);
+  }
+  .codebar{
+    display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid var(--line);
+    background:#0b1118;
+  }
+  .codebar .tl{display:flex;gap:7px}
+  .codebar .tl i{width:11px;height:11px;border-radius:50%;display:block}
+  .tl i:nth-child(1){background:#ff5f57}.tl i:nth-child(2){background:#febc2e}.tl i:nth-child(3){background:#28c840}
+  .codebar .fname{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-left:6px}
+  .codebar .tag{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--accent);
+    border:1px solid var(--line-2);padding:3px 9px;border-radius:7px}
+  pre{margin:0;padding:20px 22px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.74}
+  pre code{display:block;white-space:pre}
+  .c-kw{color:#7dd3fc}.c-fn{color:var(--accent)}.c-str{color:#fcd34d}.c-cm{color:#5b6b80;font-style:italic}
+  .c-ty{color:#c4b5fd}.c-pn{color:#e8eef6}.c-pun{color:#8aa0b8}
+
+  /* ---------- STAT BAR ---------- */
+  .statbar{margin-top:54px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:rgba(13,20,29,.5)}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr)}
+  .stat{padding:24px 18px;text-align:center;border-right:1px solid var(--line)}
+  .stat:last-child{border-right:none}
+  .stat .n{font-family:var(--mono);font-size:27px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+  .stat .n span{color:var(--accent)}
+  .stat .l{font-size:12px;color:var(--ink-dim);margin-top:4px;letter-spacing:.02em}
+  @media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}
+    .stat{border-bottom:1px solid var(--line)}.stat:nth-child(odd){border-right:1px solid var(--line)}
+    .stat:nth-child(even){border-right:none}.stat:last-child{grid-column:1/-1}}
+
+  /* ---------- SECTION SCAFFOLD ---------- */
+  section{padding:84px 0;position:relative}
+  .sec-head{max-width:42em;margin-bottom:46px}
+  .sec-head h2{font-size:clamp(26px,3.4vw,38px);font-weight:800;margin-top:12px}
+  .sec-head p{color:var(--ink-soft);font-size:16.5px;margin-top:14px}
+
+  /* ---------- EMISSION DIAGRAM ---------- */
+  .emit{display:grid;grid-template-columns:0.9fr 1.5fr;gap:40px;align-items:center}
+  @media(max-width:880px){.emit{grid-template-columns:1fr;gap:30px}}
+  .emit-source{
+    background:var(--panel);border:1px solid var(--line-2);border-radius:14px;padding:24px;
+    position:relative;box-shadow:0 0 0 4px rgba(51,224,161,.05);
+  }
+  .emit-source .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
+  .emit-source .big{font-family:var(--mono);font-size:18px;color:var(--ink);margin-top:10px;font-weight:500}
+  .emit-source .big b{color:var(--accent)}
+  .emit-source .meta{font-size:13px;color:var(--ink-dim);margin-top:12px;line-height:1.5}
+  .emit-list{display:grid;gap:12px}
+  .emit-row{
+    display:flex;align-items:center;gap:15px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:15px 17px;transition:.2s;position:relative;overflow:hidden;
+  }
+  .emit-row:hover{border-color:var(--line-2);transform:translateX(4px)}
+  .emit-row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+  .emit-ico{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;
+    background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c)}
+  .emit-ico svg{width:21px;height:21px}
+  .emit-row .t{font-weight:600;font-size:15px}
+  .emit-row .d{font-size:13px;color:var(--ink-dim);margin-top:2px}
+  .emit-row .auto{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    color:var(--accent);border:1px solid var(--line-2);padding:3px 7px;border-radius:6px;flex:0 0 auto}
+
+  /* ---------- ARCH DIAGRAM ---------- */
+  .arch{display:grid;gap:14px}
+  .layer{
+    border:1px solid var(--line);border-radius:13px;background:var(--panel);overflow:hidden;
+  }
+  .layer-head{display:flex;align-items:center;gap:13px;padding:13px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg,color-mix(in srgb,var(--lc) 10%,transparent),transparent)}
+  .layer-head .tier{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--lc);font-weight:700}
+  .layer-head .tier-d{font-size:13px;color:var(--ink-dim)}
+  .layer-bar{width:8px;height:8px;border-radius:50%;background:var(--lc);box-shadow:0 0 9px var(--lc)}
+  .pkgs{display:flex;flex-wrap:wrap;gap:8px;padding:15px 18px}
+  .pkg{
+    font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:6px 11px;
+    transition:.16s;cursor:default;
+  }
+  .pkg:hover{border-color:var(--lc);color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--lc) 20%,transparent)}
+  .pkg b{color:var(--ink)}
+  .pkg .x{color:var(--ink-dim);font-style:normal}
+  .layer.engine{border-color:var(--line-2);box-shadow:0 0 0 4px rgba(51,224,161,.06)}
+
+  /* ---------- TOGGLE / DUAL VIEW ---------- */
+  .toggle-wrap{display:flex;justify-content:center;margin-bottom:40px}
+  .toggle{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:5px;position:relative}
+  .toggle button{
+    font-family:var(--sans);font-weight:600;font-size:14.5px;color:var(--ink-soft);
+    background:transparent;border:none;padding:10px 24px;border-radius:9px;cursor:pointer;
+    position:relative;z-index:2;transition:color .2s;display:flex;align-items:center;gap:9px;
+  }
+  .toggle button.active{color:#06231a}
+  .toggle .pill{position:absolute;top:5px;bottom:5px;border-radius:9px;background:var(--accent);
+    transition:transform .28s cubic-bezier(.4,0,.2,1),width .28s cubic-bezier(.4,0,.2,1);z-index:1}
+  .view{display:none}
+  .view.active{display:block;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* technical cards */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:880px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;transition:.2s}
+  .card:hover{border-color:var(--line-2);transform:translateY(-3px);box-shadow:0 20px 50px -30px rgba(0,0,0,.9)}
+  .card .ci{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;margin-bottom:16px;
+    background:var(--accent-glow);color:var(--accent)}
+  .card .ci svg{width:22px;height:22px}
+  .card h3{font-size:17px;font-weight:700}
+  .card p{font-size:14px;color:var(--ink-soft);margin-top:9px}
+  .card code{font-size:12.5px;color:var(--accent);background:var(--bg-soft);padding:1px 6px;border-radius:5px}
+
+  /* principle rows */
+  .principle{display:flex;gap:18px;padding:22px 0;border-bottom:1px solid var(--line)}
+  .principle:last-child{border-bottom:none}
+  .principle .q{font-family:var(--mono);font-size:15px;color:var(--accent);font-weight:500;flex:0 0 240px}
+  .principle .a{color:var(--ink-soft);font-size:15px}
+  .principle .a b{color:var(--ink)}
+  @media(max-width:760px){.principle{flex-direction:column;gap:7px}.principle .q{flex:none}}
+
+  /* business value */
+  .biz-lead{
+    border-left:3px solid var(--accent);padding:6px 0 6px 22px;margin-bottom:38px;
+    font-size:19px;color:var(--ink);max-width:40em;
+  }
+  .biz-lead b{color:var(--accent)}
+  .bizgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  @media(max-width:760px){.bizgrid{grid-template-columns:1fr}}
+  .bcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;position:relative;overflow:hidden}
+  .bcard::after{content:attr(data-n);position:absolute;top:14px;right:18px;font-family:var(--mono);
+    font-size:13px;color:var(--line-2);font-weight:700}
+  .bcard h3{font-size:18px;font-weight:700;max-width:90%}
+  .bcard p{font-size:14.5px;color:var(--ink-soft);margin-top:11px}
+  .bcard .kw{color:var(--accent);font-weight:600}
+  .bcard.span{grid-column:1/-1;background:linear-gradient(120deg,#0e1a17,#0c121a);border-color:var(--line-2)}
+
+  /* tech stack band */
+  .stackband{background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .chips{display:flex;flex-wrap:wrap;gap:11px;margin-top:8px}
+  .chip{
+    font-family:var(--mono);font-size:13px;color:var(--ink-soft);
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 14px;
+    display:inline-flex;align-items:center;gap:9px;transition:.16s;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--ink)}
+  .chip i{width:6px;height:6px;border-radius:50%;background:var(--accent);font-style:normal}
+  .chip b{color:var(--ink)}
+  .mcp-note{margin-top:26px;display:flex;gap:13px;align-items:flex-start;
+    background:var(--panel);border:1px solid var(--line-2);border-radius:13px;padding:18px 20px;max-width:46em}
+  .mcp-note svg{flex:0 0 auto;color:var(--mcp);width:24px;height:24px;margin-top:1px}
+  .mcp-note p{font-size:14.5px;color:var(--ink-soft);margin:0}
+  .mcp-note b{color:var(--ink)}
+
+  /* two votes */
+  .votes{display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;margin-top:14px}
+  @media(max-width:760px){.votes{grid-template-columns:1fr}}
+  .vote{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}
+  .vote .nm{font-weight:700;font-size:19px;color:var(--ink)}
+  .vote .ds{font-size:13.5px;color:var(--ink-dim);margin-top:6px}
+  .vote .tg{font-family:var(--mono);font-size:11px;color:var(--accent);margin-top:13px;
+    border:1px solid var(--line-2);display:inline-block;padding:3px 10px;border-radius:7px}
+  .votes .op{font-family:var(--mono);font-size:34px;color:var(--accent);text-align:center;font-weight:700}
+  @media(max-width:760px){.votes .op{font-size:22px}}
+  .votes-out{margin-top:24px;text-align:center;font-size:15px;color:var(--ink-soft)}
+  .votes-out b{color:var(--accent)}
+
+  /* final CTA */
+  .final{text-align:center;padding:96px 0}
+  .final h2{font-size:clamp(28px,4vw,44px);font-weight:800;max-width:16em;margin:0 auto}
+  .final h2 .grad{background:linear-gradient(120deg,var(--accent),var(--rest));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .final p{color:var(--ink-soft);font-size:17px;margin:18px auto 30px;max-width:34em}
+  .final .codeline{font-family:var(--mono);font-size:14px;color:var(--ink-soft);
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 18px;display:inline-block;margin-bottom:30px}
+  .final .codeline .c-fn{color:var(--accent)}
+
+  /* footer */
+  footer{border-top:1px solid var(--line);padding:40px 0 56px;background:var(--bg-soft)}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+  .foot .l{display:flex;align-items:center;gap:11px;font-weight:700}
+  .foot .meta{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim)}
+  .foot .meta span{color:var(--accent)}
+  .foot-links{display:flex;gap:22px;font-size:13.5px;color:var(--ink-soft)}
+
+  /* reveal on scroll */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}
+    html{scroll-behavior:auto}.view.active{animation:none}}
+
+  /* ---------- REQUEST FLOW PIPELINE ---------- */
+  .flow{display:grid;gap:0;position:relative;margin-top:8px}
+  .fstep{
+    display:grid;grid-template-columns:54px 168px 1fr;gap:18px;align-items:start;
+    padding:16px 0;position:relative;
+  }
+  @media(max-width:680px){.fstep{grid-template-columns:42px 1fr;gap:14px}
+    .fstep .fpkg{grid-column:2}.fstep .fdesc{grid-column:2}}
+  .fnum{
+    grid-row:1;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+    font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);
+    background:var(--panel);border:1px solid var(--line-2);position:relative;z-index:2;
+  }
+  /* connector spine */
+  .fstep:not(:last-child)::before{
+    content:"";position:absolute;left:18px;top:46px;bottom:-16px;width:2px;
+    background:linear-gradient(180deg,var(--line-2),var(--line));z-index:0;
+  }
+  .fstep.app .fnum{color:#06231a;background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow)}
+  .fstep.fail .fnum{color:var(--tenant);border-color:color-mix(in srgb,var(--tenant) 40%,var(--line-2))}
+  .fpkg{font-family:var(--mono);font-size:14px;color:var(--ink);font-weight:500;padding-top:8px}
+  .fpkg .ar{color:var(--ink-dim)}
+  .fdesc{font-size:14px;color:var(--ink-soft);padding-top:8px}
+  .fdesc b{color:var(--ink)}
+  .fdesc code{font-family:var(--mono);font-size:12.5px;color:var(--accent);background:var(--bg-soft);padding:1px 6px;border-radius:5px}
+  .fstep.app .fpkg{color:var(--accent)}
+  .fstep.app .fdesc b{color:var(--accent)}
+  .flow-legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:24px;font-size:12.5px;color:var(--ink-dim)}
+  .flow-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+  /* deep-dive cards */
+  .dives{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:42px}
+  @media(max-width:880px){.dives{grid-template-columns:1fr}}
+  .dive{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;transition:.2s}
+  .dive:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .dive .dh{display:flex;align-items:center;gap:11px;margin-bottom:13px}
+  .dive .di{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;
+    background:color-mix(in srgb,var(--dc) 14%,transparent);color:var(--dc)}
+  .dive .di svg{width:19px;height:19px}
+  .dive h3{font-size:16px;font-weight:700}
+  .dive p{font-size:13.5px;color:var(--ink-soft);margin-top:0}
+  .dive p code{font-family:var(--mono);font-size:12px;color:var(--ink);background:var(--bg-soft);padding:1px 5px;border-radius:4px}
+
+  /* dedicated tech-stack grid */
+  .techgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+  @media(max-width:900px){.techgrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.techgrid{grid-template-columns:1fr}}
+  .tcard{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:20px;transition:.18s;position:relative}
+  .tcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 18px 44px -28px rgba(0,0,0,.9)}
+  .tcard .tn{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:9px}
+  .tcard .tn i{width:7px;height:7px;border-radius:50%;background:var(--accent);font-style:normal;flex:0 0 auto;box-shadow:0 0 8px var(--accent)}
+  .tcard .tw{font-size:13.5px;color:var(--ink-soft);margin-top:10px}
+  .tcard .ty{font-size:12.5px;color:var(--ink-dim);margin-top:9px;border-top:1px solid var(--line);padding-top:9px}
+  .tcard .ty b{color:var(--accent);font-weight:600}
+
+  /* agent-first eyebrow */
+  .hero-eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);font-weight:500;margin:22px 0 14px;display:flex;align-items:center;gap:11px}
+  .hero-eyebrow::before{content:"";width:26px;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+
+  /* three-surfaces fan (emit section) */
+  .surfaces{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;
+    background:var(--panel);border:1px solid var(--line-2);border-radius:14px;padding:20px 22px;margin-top:18px;
+    box-shadow:0 0 0 4px rgba(51,224,161,.05)}
+  @media(max-width:680px){.surfaces{grid-template-columns:1fr;gap:16px}}
+  .surfaces .src{font-family:var(--mono);font-size:14px;color:var(--accent);font-weight:600;white-space:nowrap;
+    display:flex;align-items:center;gap:10px}
+  .surfaces .src .arr{color:var(--ink-dim)}
+  .surfaces .three{display:flex;gap:12px;flex-wrap:wrap}
+  .surf{flex:1 1 0;min-width:130px;background:var(--bg-soft);border:1px solid var(--line);border-radius:11px;
+    padding:13px 15px;border-top:2px solid var(--sc)}
+  .surf .sh{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .surf .sh i{width:7px;height:7px;border-radius:50%;background:var(--sc);font-style:normal;flex:0 0 auto}
+  .surf .sd{font-size:12px;color:var(--ink-dim);margin-top:5px;line-height:1.45}
+  .surf .sd code{font-family:var(--mono);font-size:11px;color:var(--accent)}
+  .surfaces .note{grid-column:1/-1;font-size:12.5px;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:13px;margin-top:2px}
+  .surfaces .note b{color:var(--accent)}
+
+  /* hero pills */
+  .hero-pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}
+  .hpill{font-family:var(--mono);font-size:12px;color:var(--ink-soft);background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;display:inline-flex;align-items:center;gap:8px}
+  .hpill i{width:6px;height:6px;border-radius:50%;background:var(--accent);font-style:normal;box-shadow:0 0 7px var(--accent)}
+
+  /* headless callout band */
+  .headless{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:linear-gradient(100deg,#0c1a16,#0a1119)}
+  .headless-in{display:grid;grid-template-columns:auto 1fr auto;gap:30px;align-items:center;padding:30px 0}
+  @media(max-width:820px){.headless-in{grid-template-columns:1fr;gap:18px}}
+  .headless .hi{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;flex:0 0 auto;
+    background:var(--accent-glow);color:var(--accent)}
+  .headless .hi svg{width:28px;height:28px}
+  .headless h3{font-size:21px;font-weight:800;letter-spacing:-.015em}
+  .headless h3 span{color:var(--accent)}
+  .headless p{font-size:14.5px;color:var(--ink-soft);margin:7px 0 0;max-width:54em}
+  .headless p b{color:var(--ink)}
+  .headless .targets{display:flex;gap:9px;flex-wrap:wrap}
+  .headless .tgt{font-family:var(--mono);font-size:12px;color:var(--ink-soft);
+    border:1px solid var(--line-2);border-radius:8px;padding:6px 11px;white-space:nowrap}
+
+  /* capabilities matrix */
+  .capgroups{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+  @media(max-width:880px){.capgroups{grid-template-columns:1fr}}
+  .capgroup{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:22px;}
+  .capgroup.wide{grid-column:1/-1}
+  .capgroup-h{display:flex;align-items:center;gap:11px;margin-bottom:6px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .capgroup-h .cg-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;
+    background:color-mix(in srgb,var(--cg) 14%,transparent);color:var(--cg)}
+  .capgroup-h .cg-ic svg{width:18px;height:18px}
+  .capgroup-h h3{font-size:16px;font-weight:700}
+  .capgroup-h .cg-n{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .caplist{display:grid;gap:0}
+  .capgroup.wide .caplist{grid-template-columns:repeat(2,1fr);gap:0 26px}
+  @media(max-width:680px){.capgroup.wide .caplist{grid-template-columns:1fr}}
+  .capitem{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .capitem:last-child{border-bottom:none}
+  .capgroup.wide .capitem:nth-last-child(2){border-bottom:none}
+  .capitem .ck{color:var(--cg);flex:0 0 auto;margin-top:1px}
+  .capitem .ck svg{width:15px;height:15px;display:block}
+  .capitem .ct{font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+  .capitem .ct b{color:var(--ink);font-weight:600}
+  .capitem .ct code{font-family:var(--mono);font-size:12px;color:var(--accent);background:var(--bg-soft);padding:1px 5px;border-radius:4px}
+
+  /* ============ DIAGRAM MOTION (subtle, looping, gated) ============ */
+  /* shared cadence: 6 emit rows / 11 flow steps cycle in sequence then loop */
+
+  /* --- emit diagram: SVG connector overlay --- */
+  .emit{position:relative}
+  .emit-connectors{
+    position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;
+    opacity:0;transition:opacity .6s ease;
+  }
+  .emit.anim-on .emit-connectors{opacity:1}
+  .emit-connectors .track{fill:none;stroke:var(--line-2);stroke-width:1;opacity:.45;vector-effect:non-scaling-stroke}
+  .emit-connectors .pulse{
+    fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;
+    filter:drop-shadow(0 0 3px var(--accent));
+    stroke-dasharray:12 100;stroke-dashoffset:112;opacity:0;
+    vector-effect:non-scaling-stroke;
+  }
+  .emit.anim-on .emit-connectors .pulse{animation:emitPulse 6s linear infinite}
+  .emit-connectors .pulse.p1{animation-delay:0s}
+  .emit-connectors .pulse.p2{animation-delay:1s}
+  .emit-connectors .pulse.p3{animation-delay:2s}
+  .emit-connectors .pulse.p4{animation-delay:3s}
+  .emit-connectors .pulse.p5{animation-delay:4s}
+  .emit-connectors .pulse.p6{animation-delay:5s}
+  @keyframes emitPulse{
+    0%{stroke-dashoffset:112;opacity:0}
+    8%{opacity:.9}
+    20%{stroke-dashoffset:0;opacity:.9}
+    27%{stroke-dashoffset:-12;opacity:0}
+    100%{stroke-dashoffset:-12;opacity:0}
+  }
+  /* emit rows sit above the connectors */
+  .emit-source,.emit-list{position:relative;z-index:1}
+  /* row arrival glow, staggered to match the pulse delays */
+  .emit.anim-on .emit-row{animation:rowGlow 6s ease-in-out infinite}
+  .emit.anim-on .emit-row:nth-child(1){animation-delay:.9s}
+  .emit.anim-on .emit-row:nth-child(2){animation-delay:1.9s}
+  .emit.anim-on .emit-row:nth-child(3){animation-delay:2.9s}
+  .emit.anim-on .emit-row:nth-child(4){animation-delay:3.9s}
+  .emit.anim-on .emit-row:nth-child(5){animation-delay:4.9s}
+  .emit.anim-on .emit-row:nth-child(6){animation-delay:5.9s}
+  @keyframes rowGlow{
+    0%,100%{border-color:var(--line);box-shadow:none}
+    4%{border-color:var(--c);box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 40%,transparent),0 0 16px -4px var(--c)}
+    14%{border-color:var(--line);box-shadow:none}
+  }
+  .emit.anim-on .emit-row .emit-ico{animation:icoGlow 6s ease-in-out infinite;animation-delay:inherit}
+  @keyframes icoGlow{
+    0%,100%{box-shadow:none}
+    4%{box-shadow:0 0 14px -2px var(--c)}
+    14%{box-shadow:none}
+  }
+  /* source box gently breathes as it emits */
+  .emit.anim-on .emit-source{animation:srcBreathe 6s ease-in-out infinite}
+  @keyframes srcBreathe{
+    0%,100%{box-shadow:0 0 0 4px rgba(51,224,161,.05)}
+    50%{box-shadow:0 0 0 4px rgba(51,224,161,.12),0 0 30px -8px var(--accent)}
+  }
+
+  /* --- request-flow pipeline: traveling pulse on the spine + step activation --- */
+  .flow{position:relative}
+  /* a pulse dot that travels down the existing connector spine (left:18px) */
+  .flow .flow-runner{
+    position:absolute;left:14px;top:30px;width:10px;height:10px;border-radius:50%;
+    background:var(--accent);box-shadow:0 0 12px 2px var(--accent);
+    opacity:0;z-index:3;pointer-events:none;
+  }
+  .flow.anim-on .flow-runner{animation:flowRun 11s cubic-bezier(.45,0,.55,1) infinite}
+  @keyframes flowRun{
+    0%{top:30px;opacity:0}
+    3%{opacity:1}
+    92%{opacity:1}
+    97%{opacity:0}
+    100%{top:calc(100% - 40px);opacity:0}
+  }
+  /* each step lights up as the runner passes (11 steps over 11s = ~1s each) */
+  .flow.anim-on .fstep:nth-child(1) .fnum{animation-delay:0s}
+  .flow.anim-on .fstep:nth-child(2) .fnum{animation-delay:1s}
+  .flow.anim-on .fstep:nth-child(3) .fnum{animation-delay:2s}
+  .flow.anim-on .fstep:nth-child(4) .fnum{animation-delay:3s}
+  .flow.anim-on .fstep:nth-child(5) .fnum{animation-delay:4s}
+  .flow.anim-on .fstep:nth-child(6) .fnum{animation-delay:5s}
+  .flow.anim-on .fstep:nth-child(7) .fnum{animation-delay:6s}
+  .flow.anim-on .fstep:nth-child(8) .fnum{animation-delay:7s}
+  .flow.anim-on .fstep:nth-child(9) .fnum{animation-delay:8s}
+  .flow.anim-on .fstep:nth-child(10) .fnum{animation-delay:9s}
+  .flow.anim-on .fstep:nth-child(11) .fnum{animation-delay:10s}
+  .flow.anim-on .fstep .fnum{animation:numGlow 11s ease-in-out infinite}
+  @keyframes numGlow{
+    0%,100%{box-shadow:none;border-color:var(--line-2)}
+    3%{box-shadow:0 0 0 4px var(--accent-glow),0 0 16px -3px var(--accent);border-color:var(--accent)}
+    9%{box-shadow:none;border-color:var(--line-2)}
+  }
+  /* keep the special steps' resting accents (app=emerald already, fail=red); step 7 & 11 */
+  .flow.anim-on .fstep.app .fnum{animation:numGlowApp 11s ease-in-out infinite;animation-delay:6s}
+  @keyframes numGlowApp{
+    0%,100%{box-shadow:0 0 0 4px var(--accent-glow)}
+    3%{box-shadow:0 0 0 5px var(--accent-glow),0 0 20px -2px var(--accent)}
+    9%{box-shadow:0 0 0 4px var(--accent-glow)}
+  }
+  .flow.anim-on .fstep.fail .fnum{animation:numGlowFail 11s ease-in-out infinite;animation-delay:10s}
+  @keyframes numGlowFail{
+    0%,100%{box-shadow:none;border-color:color-mix(in srgb,var(--tenant) 40%,var(--line-2))}
+    3%{box-shadow:0 0 16px -3px var(--tenant);border-color:var(--tenant)}
+    9%{box-shadow:none;border-color:color-mix(in srgb,var(--tenant) 40%,var(--line-2))}
+  }
+
+  /* hide the fan-out SVG on stacked/mobile layout — glow sequence carries the motion */
+  @media(max-width:880px){
+    .emit-connectors{display:none}
+  }
+
+  /* MANDATORY: reduced-motion → no animation, clean lit static state */
+  @media(prefers-reduced-motion:reduce){
+    .emit-connectors,.emit.anim-on .emit-connectors{opacity:1}
+    .emit-connectors .pulse{animation:none!important;opacity:0}
+    .emit-connectors .track{opacity:.6}
+    .emit.anim-on .emit-row,.emit.anim-on .emit-row .emit-ico,
+    .emit.anim-on .emit-source,
+    .flow.anim-on .flow-runner,
+    .flow.anim-on .fstep .fnum,.flow.anim-on .fstep.app .fnum,.flow.anim-on .fstep.fail .fnum{
+      animation:none!important;
+    }
+    .flow .flow-runner{display:none}
+    /* show every output in a calm lit resting state */
+    .emit-row{border-color:var(--line-2)}
+    .emit-row .emit-ico{box-shadow:0 0 10px -4px var(--c)}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+        <rect x="2" y="2" width="28" height="28" rx="8" stroke="#33e0a1" stroke-width="1.6"/>
+        <path d="M11 9v14M11 16l8-7M11 16l8 7" stroke="#33e0a1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span><span class="v">Vibery</span> <span class="k">Kernel</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#flow">Request flow</a>
+      <a href="#arch">Architecture</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#views">Engineering · Business</a>
+      <a href="#stack">Stack</a>
+      <a class="nav-cta" href="#start">go get →</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="badge"><span class="dot"></span> github.com/vibery-studio/kernel · Go 1.26.1</span>
+      <div class="hero-eyebrow">Agent-first backend framework</div>
+      <h1>One definition.<br/><span class="grad">Three surfaces.</span></h1>
+      <p class="lede">An agent-first Go backend kernel distilled from two production systems. You write one
+        <code>Resource{}</code> — and a <b style="color:var(--ink)">REST API, MCP tools, and a CLI</b> are all
+        emitted from it, over the same lifecycle, with tenancy, events, and audit built in.</p>
+      <p class="sub"><b style="color:var(--ink)">API, MCP, and CLI from one definition</b> — your backend is
+        AI-callable by construction. Most frameworks bolt an API on for humans and maybe expose MCP later; here the
+        agent surface is emitted from the core, not retrofitted. Agents are first-class.</p>
+      <div class="hero-pills">
+        <span class="hpill"><i></i>API · MCP · CLI from one definition</span>
+        <span class="hpill"><i></i>Headless by construction</span>
+        <span class="hpill"><i></i>PBAC, deny-wins</span>
+        <span class="hpill"><i></i>RLS, fail-closed</span>
+      </div>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#how">See what one declaration emits
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#06231a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#views">Engineering &amp; business view</a>
+      </div>
+    </div>
+
+    <div class="codecard reveal">
+      <div class="codebar">
+        <span class="tl"><i></i><i></i><i></i></span>
+        <span class="fname">orders/register.go</span>
+        <span class="tag">REAL API</span>
+      </div>
+<pre><code><span class="c-fn">resource</span><span class="c-pun">.</span><span class="c-fn">Register</span><span class="c-pun">(</span>mux<span class="c-pun">,</span> deps<span class="c-pun">,</span>
+  <span class="c-ty">resource</span><span class="c-pun">.</span><span class="c-ty">Resource</span><span class="c-pun">{</span>
+    <span class="c-pn">Entity</span><span class="c-pun">:</span> <span class="c-pun">&amp;</span><span class="c-ty">Order</span><span class="c-pun">{},</span>          <span class="c-cm">// your struct (embeds entity.Base)</span>
+    <span class="c-pn">Plural</span><span class="c-pun">:</span> <span class="c-str">"orders"</span><span class="c-pun">,</span>
+    <span class="c-pn">Verbs</span><span class="c-pun">:</span> <span class="c-pun">[]</span><span class="c-ty">resource</span><span class="c-pun">.</span><span class="c-ty">Verb</span><span class="c-pun">{</span>
+      <span class="c-pun">{</span><span class="c-pn">Name</span><span class="c-pun">:</span> <span class="c-str">"create"</span><span class="c-pun">,</span> <span class="c-pn">Method</span><span class="c-pun">:</span> <span class="c-str">"POST"</span><span class="c-pun">,</span> <span class="c-pn">Path</span><span class="c-pun">:</span> <span class="c-str">"/"</span><span class="c-pun">,</span>
+        <span class="c-pn">EventTopic</span><span class="c-pun">:</span> <span class="c-str">"orders.created"</span><span class="c-pun">},</span>
+      <span class="c-pun">{</span><span class="c-pn">Name</span><span class="c-pun">:</span> <span class="c-str">"refund"</span><span class="c-pun">,</span> <span class="c-pn">Method</span><span class="c-pun">:</span> <span class="c-str">"POST"</span><span class="c-pun">,</span> <span class="c-pn">Path</span><span class="c-pun">:</span> <span class="c-str">"/{id}/refund"</span><span class="c-pun">,</span>
+        <span class="c-pn">EventTopic</span><span class="c-pun">:</span> <span class="c-str">"orders.refunded"</span><span class="c-pun">,</span> <span class="c-pn">QuotaKey</span><span class="c-pun">:</span> <span class="c-str">"refunds"</span><span class="c-pun">,</span>
+        <span class="c-pn">PolicyHook</span><span class="c-pun">:</span> checkRefundable<span class="c-pun">},</span>
+    <span class="c-pun">},</span>
+  <span class="c-pun">},</span>
+<span class="c-pun">)</span></code></pre>
+    </div>
+  </div>
+
+  <!-- STAT BAR -->
+  <div class="statbar">
+    <div class="wrap stats">
+      <div class="stat"><div class="n"><span>28</span></div><div class="l">packages</div></div>
+      <div class="stat"><div class="n">~7.2<span>K</span></div><div class="l">lines of prod Go</div></div>
+      <div class="stat"><div class="n"><span>1:1</span></div><div class="l">test ratio</div></div>
+      <div class="stat"><div class="n"><span>266</span></div><div class="l">test functions · all green</div></div>
+      <div class="stat"><div class="n"><span>2</span></div><div class="l">production systems distilled</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- HEADLESS CALLOUT -->
+<div class="headless">
+  <div class="wrap headless-in reveal">
+    <span class="hi"><svg viewBox="0 0 24 24" fill="none"><rect x="2.5" y="4" width="13" height="9" rx="1.6" stroke="currentColor" stroke-width="1.7"/><path d="M6 17h6M9 13v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><rect x="17.5" y="8" width="4.5" height="11" rx="1.4" stroke="currentColor" stroke-width="1.7"/></svg></span>
+    <div>
+      <h3>Headless by construction — <span>bring your own frontend</span></h3>
+      <p>No bundled UI, no framework lock-in on the frontend. The kernel is <b>pure Go packages you mount on your own
+        transport</b>; the same verb lifecycle serves REST and MCP from one definition. <b>One backend serves your web app,
+        your mobile app, and AI agents identically</b> — the kernel is the backend and the AI interface, never the UI.</p>
+    </div>
+    <div class="targets">
+      <span class="tgt">web</span><span class="tgt">mobile</span><span class="tgt">CLI</span><span class="tgt">services</span><span class="tgt">AI agents</span>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS / EMISSION DIAGRAM -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">One declaration → six emissions · three surfaces</span>
+      <h2>What a single <code style="font-family:var(--mono);color:var(--accent)">Resource{}</code> emits</h2>
+      <p>The verbs you saw above expand, <b style="color:var(--ink)">by construction</b>, into a complete
+        product surface — reachable over <b style="color:var(--ink)">REST, MCP, and CLI</b> from one definition.
+        Add a second resource and its full stack appears — touching <b style="color:var(--ink)">zero kernel code</b>.</p>
+    </div>
+
+    <div class="emit reveal">
+      <svg class="emit-connectors" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <!-- tracks + traveling pulses fan from source (left ~36) to each row (right, 6 bands) -->
+        <path class="track" d="M36,50 C52,50 52,8 64,8"/>
+        <path class="track" d="M36,50 C52,50 52,25 64,25"/>
+        <path class="track" d="M36,50 C52,50 52,42 64,42"/>
+        <path class="track" d="M36,50 C52,50 52,58 64,58"/>
+        <path class="track" d="M36,50 C52,50 52,75 64,75"/>
+        <path class="track" d="M36,50 C52,50 52,92 64,92"/>
+        <path class="pulse p1" pathLength="100" d="M36,50 C52,50 52,8 64,8"/>
+        <path class="pulse p2" pathLength="100" d="M36,50 C52,50 52,25 64,25"/>
+        <path class="pulse p3" pathLength="100" d="M36,50 C52,50 52,42 64,42"/>
+        <path class="pulse p4" pathLength="100" d="M36,50 C52,50 52,58 64,58"/>
+        <path class="pulse p5" pathLength="100" d="M36,50 C52,50 52,75 64,75"/>
+        <path class="pulse p6" pathLength="100" d="M36,50 C52,50 52,92 64,92"/>
+      </svg>
+      <div class="emit-source">
+        <div class="lbl">You write</div>
+        <div class="big"><b>resource.Resource{}</b><br/>+ verbs</div>
+        <div class="meta">GET list / GET get are auto-emitted alongside the verbs you declare.
+          Quota, policy and events are opt-in per verb via struct fields.</div>
+      </div>
+
+      <div class="emit-list">
+        <div class="emit-row" style="--c:var(--rest)">
+          <span class="emit-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <div><div class="t">REST routes</div><div class="d">GET list/get auto-emitted + your declared verbs</div></div>
+          <span class="auto">AUTO</span>
+        </div>
+        <div class="emit-row" style="--c:var(--mcp)">
+          <span class="emit-ico"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <div><div class="t">MCP tools <code style="font-size:11.5px;color:var(--mcp);background:#161022;padding:1px 6px;border-radius:5px">orders_create</code> <code style="font-size:11.5px;color:var(--mcp);background:#161022;padding:1px 6px;border-radius:5px">orders_refund</code></div><div class="d">auto-registered — Claude &amp; agents call your API directly</div></div>
+          <span class="auto">AUTO</span>
+        </div>
+        <div class="emit-row" style="--c:var(--audit)">
+          <span class="emit-ico"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M7 9l3 3-3 3M13 15h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <div><div class="t">CLI commands <code style="font-size:11.5px;color:var(--audit);background:#0e1a12;padding:1px 6px;border-radius:5px">orders create</code> <code style="font-size:11.5px;color:var(--audit);background:#0e1a12;padding:1px 6px;border-radius:5px">orders refund</code></div><div class="d"><code style="font-size:11.5px;color:var(--accent)">&lt;plural&gt; &lt;verb&gt; --flags</code> over the same lifecycle</div></div>
+          <span class="auto">AUTO</span>
+        </div>
+        <div class="emit-row" style="--c:var(--tenant)">
+          <span class="emit-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+          <div><div class="t">Tenant-scoped RLS persistence</div><div class="d">Postgres Row-Level Security — fail-closed, isolated by default</div></div>
+          <span class="auto">AUTO</span>
+        </div>
+        <div class="emit-row" style="--c:var(--event)">
+          <span class="emit-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+          <div><div class="t">NATS event on success</div><div class="d">durable JetStream publish on the declared topic</div></div>
+          <span class="auto">AUTO</span>
+        </div>
+        <div class="emit-row" style="--c:var(--audit)">
+          <span class="emit-ico"><svg viewBox="0 0 24 24" fill="none"><path d="M5 3h11l3 3v15H5V3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+          <div><div class="t">Audit row + quota check</div><div class="d">append-only journal entry; QuotaKey enforced before the verb runs</div></div>
+          <span class="auto">AUTO</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="surfaces reveal">
+      <div class="src"><code style="font-family:var(--mono)">resource.Resource{}</code> <span class="arr">→</span></div>
+      <div class="three">
+        <div class="surf" style="--sc:var(--rest)">
+          <div class="sh"><i></i>REST API</div>
+          <div class="sd"><code>POST /orders</code> · HTTP front-end</div>
+        </div>
+        <div class="surf" style="--sc:var(--mcp)">
+          <div class="sh"><i></i>MCP tools</div>
+          <div class="sd"><code>orders_create</code> · AI-agent front-end</div>
+        </div>
+        <div class="surf" style="--sc:var(--audit)">
+          <div class="sh"><i></i>CLI commands</div>
+          <div class="sd"><code>orders create --flags</code> · terminal front-end</div>
+        </div>
+      </div>
+      <div class="note"><b>One definition → three surfaces.</b> REST, MCP, and CLI are three front-ends over a single
+        verb-execution path (<code style="font-family:var(--mono);color:var(--accent)">resource.ExecVerb</code>) — same
+        tenancy, same events, same audit, no matter which one the caller uses.</div>
+    </div>
+
+    <div class="mcp-note reveal" style="margin-top:34px">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg>
+      <p><b>Proven end-to-end.</b> The acceptance test boots a real Postgres + NATS via testcontainers and
+        verifies all five emissions fire: tenant&nbsp;B genuinely cannot read tenant&nbsp;A's rows through
+        Postgres RLS, a real NATS subscriber receives the event, the MCP tool is registered, and an audit row
+        is written. Not mocks — ephemeral infrastructure, per test.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW A REQUEST FLOWS -->
+<section id="flow">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The request lifecycle</span>
+      <h2>How a request flows</h2>
+      <p>The declaration is the easy part to see — this is the depth underneath it. Every request travels a
+        complete backend: <b style="color:var(--ink)">identity, tenancy, authorization, validation, persistence,
+        events, audit, and error handling</b>. The only stage that is your code is the PolicyHook.</p>
+      <p style="font-size:14px;color:var(--ink-dim);margin-top:10px">All three front-ends —
+        <b style="color:var(--rest)">REST</b>, <b style="color:var(--mcp)">MCP</b>, and
+        <b style="color:var(--audit)">CLI</b> — converge on a single verb-execution path
+        (<code style="font-family:var(--mono);color:var(--accent);background:var(--bg-soft);padding:1px 6px;border-radius:5px">resource.ExecVerb</code>),
+        so every caller travels the exact lifecycle below.</p>
+    </div>
+
+    <div class="flow reveal">
+      <div class="fstep">
+        <div class="fnum">1</div>
+        <div class="fpkg"><span class="ar">request →</span> correlate</div>
+        <div class="fdesc">A <b>request-ID is stamped</b> onto the context so every log line, event, and audit row downstream is traceable to this call.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">2</div>
+        <div class="fpkg">authn</div>
+        <div class="fdesc">The bearer token is resolved to a <b>Principal</b> — who is calling, with which capabilities.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">3</div>
+        <div class="fpkg">scope</div>
+        <div class="fdesc">The Principal's <b>tenant context</b> is set on the context — the single source of truth every scoped read and write reads from.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">4</div>
+        <div class="fpkg">store</div>
+        <div class="fdesc">An <b>RLS-scoped connection</b> is opened: Postgres runs <code>SET app.current_tenant_id</code> on the connection. <b>Fail-closed</b> — no tenant, no rows.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">5</div>
+        <div class="fpkg">authz</div>
+        <div class="fdesc">The route maps to an <b>IAM action</b>; the policy is evaluated <b>deny-wins</b>. A request that isn't explicitly allowed is rejected.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">6</div>
+        <div class="fpkg">validate</div>
+        <div class="fdesc">The request body runs the <b>field validation pipeline</b> before any business logic touches it.</div>
+      </div>
+      <div class="fstep app">
+        <div class="fnum">7</div>
+        <div class="fpkg">PolicyHook</div>
+        <div class="fdesc"><b>The only stage that is your application code.</b> Your domain rule runs — e.g. <code>checkRefundable</code> — deciding whether this specific verb may proceed.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">8</div>
+        <div class="fpkg">store</div>
+        <div class="fdesc">The <b>write executes tenant-scoped</b>, enforced by RLS at the database. The connection physically cannot reach another tenant's rows.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">9</div>
+        <div class="fpkg">bus</div>
+        <div class="fdesc">On success, <b>bus.Publish</b> emits the verb's event to <b>NATS JetStream</b> — durable, for any consumer to react to.</div>
+      </div>
+      <div class="fstep">
+        <div class="fnum">10</div>
+        <div class="fpkg">journal</div>
+        <div class="fdesc">An <b>append-only audit row</b> records what happened, by whom, under which request-ID. Immutable by construction.</div>
+      </div>
+      <div class="fstep fail">
+        <div class="fnum">×</div>
+        <div class="fpkg">httperr</div>
+        <div class="fdesc">Any failure at any stage above short-circuits to the <b>canonical error envelope</b> — one consistent error shape across every resource.</div>
+      </div>
+      <span class="flow-runner" aria-hidden="true"></span>
+    </div>
+
+    <div class="flow-legend reveal">
+      <span><i style="background:var(--accent)"></i>Your application code</span>
+      <span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>Kernel mechanism (zero per-resource wiring)</span>
+      <span><i style="background:color-mix(in srgb,var(--tenant) 40%,var(--line-2))"></i>Failure path</span>
+    </div>
+
+    <!-- deep-dive cards -->
+    <div class="dives">
+      <div class="dive reveal" style="--dc:var(--tenant)">
+        <div class="dh">
+          <span class="di"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3>Tenant isolation by default</h3>
+        </div>
+        <p>Postgres Row-Level Security. Every connection stamps <code>app.current_tenant_id</code>, and a query with no tenant
+          context <b style="color:var(--ink)">fails</b> rather than running unscoped. Tenant B cannot read tenant A's rows —
+          enforced by the database, not by app filters. The <code>BYPASSRLS</code> pool is the only escape, and it must be explicit.</p>
+      </div>
+      <div class="dive reveal" style="--dc:var(--event)">
+        <div class="dh">
+          <span class="di"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+          <h3>Durable events, not fire-and-forget</h3>
+        </div>
+        <p>NATS JetStream. Every verb success publishes an event, and durable pull consumers ack/nak with redelivery —
+          nothing is silently dropped. The audit journal is itself an event consumer, and automation (<code>trigger</code>)
+          reacts to events without ever touching the producer.</p>
+      </div>
+      <div class="dive reveal" style="--dc:var(--mcp)">
+        <div class="dh">
+          <span class="di"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <h3>MCP-native by construction</h3>
+        </div>
+        <p>The <code>dispatch</code> package is an MCP Code Mode server with an embedded <b style="color:var(--ink)">Goja</b>
+          JS sandbox. Every resource verb becomes an AI-callable tool automatically; the MCP contract is
+          <b style="color:var(--ink)">emitted from resource definitions</b>, never hand-written.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="arch" style="background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">28 packages · 6 layers</span>
+      <h2>The architecture, layered</h2>
+      <p>Everything below the engine is mechanism. The <b style="color:var(--accent)">resource</b> engine composes
+        it; <b style="color:var(--accent)">builtin</b> proves the composition by declaring the kernel's own
+        resources through the very same engine.</p>
+    </div>
+
+    <div class="arch">
+      <div class="layer engine reveal" style="--lc:var(--accent)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Engine</span><span class="tier-d">— the declarative composer + its own dogfooded resources</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>resource</b> <span class="x">— declarative engine; one ExecVerb path, three front-ends</span></span>
+          <span class="pkg"><b>cli</b> <span class="x">— generates CLI commands from the same Resource{} declarations</span></span>
+          <span class="pkg"><b>builtin</b> <span class="x">— apikeys / policies / config / audit, declared through the engine</span></span>
+        </div>
+      </div>
+
+      <div class="layer reveal" style="--lc:var(--mcp)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">MCP</span><span class="tier-d">— AI-callable surface &amp; automation</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>dispatch</b> <span class="x">— MCP Code Mode registry + Goja JS sandbox</span></span>
+          <span class="pkg"><b>trigger</b> <span class="x">— event → rule → action automation</span></span>
+        </div>
+      </div>
+
+      <div class="layer reveal" style="--lc:var(--event)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Async</span><span class="tier-d">— events, audit, quota, outbound, storage</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>bus</b> <span class="x">— NATS JetStream</span></span>
+          <span class="pkg"><b>journal</b> <span class="x">— append-only audit</span></span>
+          <span class="pkg"><b>meter</b> <span class="x">— quota: stock + flow ceilings</span></span>
+          <span class="pkg"><b>migrate</b></span>
+          <span class="pkg"><b>egress</b> <span class="x">— SSRF-safe outbound HTTP</span></span>
+          <span class="pkg"><b>blob</b> <span class="x">— local + R2 storage</span></span>
+        </div>
+      </div>
+
+      <div class="layer reveal" style="--lc:var(--rest)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Transport</span><span class="tier-d">— the HTTP edge</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>httperr</b> <span class="x">— error envelope</span></span>
+          <span class="pkg"><b>validate</b> <span class="x">— validation pipeline</span></span>
+          <span class="pkg"><b>httpguard</b> <span class="x">— CORS / security headers</span></span>
+          <span class="pkg"><b>ratelimit</b></span>
+          <span class="pkg"><b>recover</b> <span class="x">— panic</span></span>
+          <span class="pkg"><b>errlog</b></span>
+          <span class="pkg"><b>mcpauth</b> <span class="x">— WWW-Authenticate</span></span>
+        </div>
+      </div>
+
+      <div class="layer reveal" style="--lc:var(--tenant)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Auth</span><span class="tier-d">— identity, policy, OAuth</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>authn</b> <span class="x">— token → Principal</span></span>
+          <span class="pkg"><b>authz</b> <span class="x">— PBAC policy eval (allow/deny statements, deny-wins)</span></span>
+          <span class="pkg"><b>capability</b> <span class="x">— scope narrowing</span></span>
+          <span class="pkg"><b>authserver</b> <span class="x">— OAuth 2.0 / PKCE / DCR</span></span>
+        </div>
+      </div>
+
+      <div class="layer reveal" style="--lc:var(--audit)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Foundation</span><span class="tier-d">— identity, tenancy, storage, config</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>entity</b> <span class="x">— ULID identity spine</span></span>
+          <span class="pkg"><b>scope</b> <span class="x">— tenant context</span></span>
+          <span class="pkg"><b>store</b> <span class="x">— RLS-enforced DB pool</span></span>
+          <span class="pkg"><b>cfg</b> <span class="x">— config</span></span>
+          <span class="pkg"><b>resolve</b> <span class="x">— two-layer tenant config override</span></span>
+          <span class="pkg"><b>correlate</b> <span class="x">— request-ID</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPABILITIES MATRIX -->
+<section id="capabilities">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The full surface</span>
+      <h2>Everything you get, out of the box</h2>
+      <p>Every line below is mechanism the kernel already ships and tests against real infrastructure — so a new
+        service starts with all of it, and you write only domain logic on top.</p>
+    </div>
+
+    <div class="surfaces reveal" style="margin-bottom:30px">
+      <div class="src"><code style="font-family:var(--mono)">resource.ExecVerb</code> <span class="arr">→</span></div>
+      <div class="three">
+        <div class="surf" style="--sc:var(--rest)"><div class="sh"><i></i>REST API</div><div class="sd">HTTP front-end</div></div>
+        <div class="surf" style="--sc:var(--mcp)"><div class="sh"><i></i>MCP tools</div><div class="sd">AI-agent front-end</div></div>
+        <div class="surf" style="--sc:var(--audit)"><div class="sh"><i></i>CLI</div><div class="sd">terminal front-end</div></div>
+      </div>
+      <div class="note"><b>Three surfaces, one definition.</b> REST API, MCP tools, and a CLI are generated from the
+        same resource declaration — <b>one verb-execution path, three front-ends.</b></div>
+    </div>
+
+    <div class="capgroups">
+      <!-- Security & Tenancy -->
+      <div class="capgroup reveal" style="--cg:var(--tenant)">
+        <div class="capgroup-h">
+          <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+          <h3>Security &amp; Tenancy</h3><span class="cg-n">3</span>
+        </div>
+        <div class="caplist">
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Multitenancy</b> — Postgres RLS, fail-closed, tenant-isolated by default.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>PBAC authorization</b> — allow/deny policy statements, deny-wins, scope-clamped, wildcard actions/resources.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>SSRF-safe outbound HTTP</b> — egress blocks private / loopback / link-local by construction.</span></div>
+        </div>
+      </div>
+
+      <!-- Identity & Access -->
+      <div class="capgroup reveal" style="--cg:var(--mcp)">
+        <div class="capgroup-h">
+          <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+          <h3>Identity &amp; Access</h3><span class="cg-n">3</span>
+        </div>
+        <div class="caplist">
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Capability narrowing</b> — tokens intersect authority at issuance; can only narrow, never widen (least-privilege by construction).</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>OAuth 2.0 server</b> — Dynamic Client Registration (DCR), PKCE auth-code flow, refresh, token validation, consent.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>API keys + JWT</b> — bearer-token resolution to a typed Principal; pluggable resolver.</span></div>
+        </div>
+      </div>
+
+      <!-- Events & Automation -->
+      <div class="capgroup reveal" style="--cg:var(--event)">
+        <div class="capgroup-h">
+          <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+          <h3>Events &amp; Automation</h3><span class="cg-n">4</span>
+        </div>
+        <div class="caplist">
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>MCP-native</b> — every resource verb is an AI-callable tool; Code Mode JS sandbox (Goja) for tool execution.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Durable events</b> — NATS JetStream; ack/nak redelivery; events drive audit + automation.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Immutable audit trail</b> — append-only, event-sourced; every verb success → one audit row.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Event-driven automation</b> — rule engine reacts to events (<code>trigger</code>) without touching the producer.</span></div>
+        </div>
+      </div>
+
+      <!-- Platform -->
+      <div class="capgroup reveal" style="--cg:var(--rest)">
+        <div class="capgroup-h">
+          <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="5" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="11" width="18" height="5" rx="1.4" stroke="currentColor" stroke-width="1.7"/><path d="M7 6.5h.01M7 13.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <h3>Platform</h3><span class="cg-n">5</span>
+        </div>
+        <div class="caplist">
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Quota &amp; metering</b> — per-tenant stock + flow ceilings → HTTP 402, mechanism-only (you set the limits).</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Two-layer config</b> — per-tenant DB override → platform-file fallback; secrets stay out of git.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Object storage</b> — local + Cloudflare R2 behind one interface; presigned URLs.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Schema migrations</b> — golang-migrate, privileged DSN separate from the runtime pool.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Rate limiting</b> — pluggable, keyed by IP / identity / tenant.</span></div>
+        </div>
+      </div>
+
+      <!-- Transport & Extensibility (wide) -->
+      <div class="capgroup wide reveal" style="--cg:var(--accent)">
+        <div class="capgroup-h">
+          <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M9 4L4 9l5 5M15 4l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 19h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+          <h3>Transport &amp; Extensibility</h3><span class="cg-n">3</span>
+        </div>
+        <div class="caplist">
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Validation pipeline</b> — fluent field-level accumulator; structured violations.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Structured errors</b> — one canonical HTTP error envelope; request-ID correlation through the whole chain.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Escape hatches everywhere</b> — drop to raw SQL (<code>ExecRaw</code>), the <code>BYPASSRLS</code> admin pool (explicit), custom handlers, hand-registered MCP tools. Opinionated core, open edges.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DUAL VIEW: ENGINEERING / BUSINESS -->
+<section id="views">
+  <div class="wrap">
+    <div class="sec-head reveal" style="text-align:center;margin:0 auto 30px">
+      <span class="eyebrow">Two first-class readings</span>
+      <h2>Built for the architect <span style="color:var(--ink-dim)">and</span> the strategist</h2>
+      <p style="margin-left:auto;margin-right:auto">Same kernel. One view shows the engineering guarantees; the other shows
+        why those guarantees are leverage. Switch below.</p>
+    </div>
+
+    <div class="toggle-wrap reveal">
+      <div class="toggle" id="toggle">
+        <span class="pill" id="pill"></span>
+        <button class="active" data-view="eng">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 4L1 8l4 4M11 4l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Engineering
+        </button>
+        <button data-view="biz">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 13l4-5 3 3 5-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 4h-3M14 4v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          Business
+        </button>
+      </div>
+    </div>
+
+    <!-- ENGINEERING VIEW -->
+    <div class="view active" id="view-eng">
+      <div class="grid3">
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>RLS-by-default, fail-closed</h3>
+          <p>A query with no tenant context <b style="color:var(--ink)">fails</b> — it never silently runs unscoped.
+            Isolation is enforced at the Postgres layer, not in application <code>if</code>-statements.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6l7-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 11.5h6M9 14.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <h3>PBAC, not role checks</h3>
+          <p>Policy-based access control: policies are collections of <b style="color:var(--ink)">allow/deny statements</b>
+            (AWS-IAM-style, with wildcard actions and resources), <b style="color:var(--ink)">deny wins</b> unconditionally,
+            grants are scope-clamped and narrowed by constraints — evaluated per request, never role-name matching.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="14" height="10" rx="1.6" stroke="currentColor" stroke-width="1.6"/><path d="M6 18h6M9 14v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="17" y="9" width="5" height="11" rx="1.4" stroke="currentColor" stroke-width="1.6"/><path d="M19 12h1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <h3>Headless by construction</h3>
+          <p>The kernel ships <b style="color:var(--ink)">zero UI</b> — pure Go packages you mount on your own transport.
+            The same verb lifecycle serves REST and MCP from one definition, so one backend serves your web app,
+            your mobile app, a CLI, and AI agents identically. No framework lock-in on the frontend.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M3 9h18M7 13h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+          <h3>One error envelope, one event shape</h3>
+          <p>Opinionated core: one way to scope a tenant, one <code>httperr</code> envelope, one event contract —
+            so every resource is observable and debuggable the same way.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <h3>MCP-native by construction</h3>
+          <p>Every verb registers an MCP tool through <code>dispatch</code> — Code Mode with a Goja JS sandbox.
+            Your REST API <b style="color:var(--ink)">is</b> the agent API; there is no second surface to maintain.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="6" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="12" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.7"/><circle cx="10" cy="18" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.7"/></svg></div>
+          <h3>Tested against real infra</h3>
+          <p>266 test functions run against <b style="color:var(--ink)">ephemeral Postgres + NATS</b> spun up per
+            test via testcontainers — not mocks. A 1:1 prod-to-test line ratio across ~7.2K lines each.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
+          <h3>Escape hatches at the edges</h3>
+          <p>The core is one-way, but you can always drop to <b style="color:var(--ink)">raw SQL</b>, a custom handler,
+            or a custom MCP tool. Opinionated where it pays; open where you need it.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ci"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 00-4 12.7V18h8v-3.3A7 7 0 0012 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 21h6M10 18v3M14 18v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <h3>Mechanism, not policy</h3>
+          <p>The kernel ships the machinery — tenancy, events, audit, the metering pipeline. <b style="color:var(--ink)">Your
+            app supplies the rules.</b> Pricing and workflow steps never enter the kernel.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:46px">
+        <h3 style="font-size:15px;font-family:var(--mono);color:var(--accent);letter-spacing:.06em;margin-bottom:6px">DESIGN PRINCIPLES</h3>
+        <div class="principle reveal"><div class="q">Opinionated core,<br/>escape hatches at the edges</div><div class="a">One way to scope a tenant, one event shape, one error envelope — <b>but</b> you can always drop to raw SQL, a custom handler, or a custom MCP tool.</div></div>
+        <div class="principle reveal"><div class="q">Mechanism, not policy</div><div class="a">The kernel gives the machinery; <b>your app supplies the rules.</b> Pricing and workflow steps never enter the kernel.</div></div>
+        <div class="principle reveal"><div class="q">Evidence over anticipation</div><div class="a">Nothing is in the kernel unless <b>two real production systems both needed it.</b></div></div>
+        <div class="principle reveal"><div class="q">RLS-by-default, fail-closed</div><div class="a">A query with no tenant context <b>fails</b> — it never silently runs unscoped.</div></div>
+        <div class="principle reveal"><div class="q">PBAC, not role checks</div><div class="a">Policy-based access control — <b>allow/deny statements, deny-wins, scope-clamped, evaluated per request.</b> Authority is decided by policy, never by a role name.</div></div>
+      </div>
+    </div>
+
+    <!-- BUSINESS VIEW -->
+    <div class="view" id="view-biz">
+      <p class="biz-lead reveal">Every new backend service starts <b>months ahead.</b> Tenancy, auth, audit, events,
+        and an AI/MCP interface are already built and battle-tested — you write only domain logic.</p>
+
+      <div class="bizgrid">
+        <div class="bcard reveal" data-n="01">
+          <h3>MCP-native is the resellable surface</h3>
+          <p>A kernel-built service is an <span class="kw">AI-ready product by construction.</span> Any agent — Claude or
+            otherwise — plugs in like any third-party backend, with no extra integration work. And the MCP contract is
+            <span class="kw">emitted from your resource definitions</span>, never hand-written. That's the leverage.</p>
+        </div>
+        <div class="bcard reveal" data-n="02">
+          <h3>Multitenant + RLS from line one</h3>
+          <p>Sell to multiple customers <span class="kw">safely</span> without a security retrofit later. Tenant isolation
+            is enforced at the database, fail-closed, from the first commit — not bolted on once you have customers to lose.</p>
+        </div>
+        <div class="bcard reveal" data-n="03">
+          <h3>Proven, not promised</h3>
+          <p>A <span class="kw">1:1 test ratio against real infrastructure</span>, and <span class="kw">two live products</span>
+            already running on this DNA. The kernel isn't a bet on a clean abstraction — it's the residue of code that already
+            shipped and survived.</p>
+        </div>
+        <div class="bcard reveal" data-n="04">
+          <h3>It pays for itself</h3>
+          <p>The kernel is funded by work <span class="kw">already required</span> — it funds itself with the next service,
+            while the two existing products keep running <span class="kw">untouched.</span> No rewrite, no migration tax.</p>
+        </div>
+        <div class="bcard span reveal" data-n="05">
+          <h3>"Declare a resource, ship a product surface."</h3>
+          <p>The time-to-new-vertical collapses. A new offering is a <code style="color:var(--accent);background:var(--bg-soft);padding:1px 7px;border-radius:5px;font-family:var(--mono);font-size:13px">Resource{}</code>
+            declaration away from a tenant-isolated, audited, metered, agent-callable backend — so the business can move at the speed
+            of <span class="kw">domain decisions</span>, not infrastructure rebuilds.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TWO-VOTES RULE -->
+<section style="background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head reveal" style="text-align:center;margin:0 auto 16px">
+      <span class="eyebrow">The Two-Votes rule</span>
+      <h2>Distilled, not designed</h2>
+      <p style="margin-left:auto;margin-right:auto">A concern enters the kernel only if it appears in <b style="color:var(--ink)">both</b>
+        production systems. Evidence over anticipation — the kernel is what two real codebases independently agreed on.</p>
+    </div>
+    <div class="votes reveal">
+      <div class="vote">
+        <div class="nm">Sellkit</div>
+        <div class="ds">Multitenant commerce engine</div>
+        <div class="tg">vote ①</div>
+      </div>
+      <div class="op">∩</div>
+      <div class="vote">
+        <div class="nm">Vibework</div>
+        <div class="ds">Ops / CRM / HR / PM platform</div>
+        <div class="tg">vote ②</div>
+      </div>
+    </div>
+    <div class="votes-out reveal">Their intersection — and <b>only</b> their intersection — became the 26-package kernel.</div>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="stack" class="stackband">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">Tech stack</span>
+      <h2>Boring where it counts, sharp where it matters</h2>
+      <p>Battle-tested infrastructure, fail-closed defaults, and an MCP-native edge that turns every resource into an
+        AI-callable tool.</p>
+    </div>
+    <div class="techgrid reveal">
+      <div class="tcard">
+        <div class="tn"><i></i>Go 1.26.1</div>
+        <div class="tw">The whole kernel — all 28 packages.</div>
+        <div class="ty"><b>Why:</b> compiles to a single static binary with no runtime dependencies.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>PostgreSQL + RLS</div>
+        <div class="tw">Multitenant isolation enforced at the database layer.</div>
+        <div class="ty"><b>Why:</b> fail-closed — tenancy can't be forgotten in an app filter.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>NATS JetStream</div>
+        <div class="tw">Durable event transport for every verb success.</div>
+        <div class="ty"><b>Why:</b> events drive both the audit journal and automation.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>pgx/v5</div>
+        <div class="tw">Postgres driver and connection pool.</div>
+        <div class="ty"><b>Why:</b> per-connection tenant GUC injection (the RLS stamp).</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>Goja</div>
+        <div class="tw">Embedded JavaScript engine.</div>
+        <div class="ty"><b>Why:</b> runs MCP Code Mode tool execution inside a sandbox.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>golang-migrate</div>
+        <div class="tw">Schema migrations.</div>
+        <div class="ty"><b>Why:</b> run via a privileged DSN, separate from the runtime pool.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>chi</div>
+        <div class="tw">HTTP router.</div>
+        <div class="ty"><b>Why:</b> what the resource engine mounts its generated routes on.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>testcontainers-go</div>
+        <div class="tw">Ephemeral Postgres + NATS, spun up per test.</div>
+        <div class="ty"><b>Why:</b> how 266 tests run against real infra, not mocks.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>Model Context Protocol</div>
+        <div class="tw">The AI-agent interface standard.</div>
+        <div class="ty"><b>Why:</b> every resource is an MCP tool by construction.</div>
+      </div>
+    </div>
+    <div class="mcp-note reveal">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <p><b>MCP-native (Model Context Protocol).</b> Every resource is an AI-callable tool by construction — the agent
+        interface is emitted, never separately built or maintained.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section id="start" class="final">
+  <div class="wrap reveal">
+    <span class="eyebrow">Get started</span>
+    <h2 style="margin-top:14px">Declare a resource.<br/><span class="grad">Ship a product surface.</span></h2>
+    <p>One declaration emits the whole stack. The next service is months ahead before you write a line of domain logic.</p>
+    <div class="codeline"><span style="color:var(--ink-dim)">$</span> go get <span class="c-fn">github.com/vibery-studio/kernel</span></div><br/>
+    <div class="hero-cta" style="justify-content:center">
+      <a class="btn btn-primary" href="#how">See what one declaration emits</a>
+      <a class="btn btn-ghost" href="#arch">Read the architecture</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot">
+    <div>
+      <div class="l">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="2" y="2" width="28" height="28" rx="8" stroke="#33e0a1" stroke-width="1.6"/><path d="M11 9v14M11 16l8-7M11 16l8 7" stroke="#33e0a1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span><span style="color:var(--accent)">Vibery</span> Kernel</span>
+      </div>
+      <div class="meta" style="margin-top:10px">github.com/vibery-studio/kernel · Go <span>1.26.1</span></div>
+      <div class="meta" style="margin-top:4px">28 packages · full suite green against real Postgres + NATS · distilled from Sellkit + Vibework</div>
+    </div>
+    <div class="foot-links">
+      <a href="#how">How it works</a>
+      <a href="#arch">Architecture</a>
+      <a href="#views">Engineering</a>
+      <a href="#views">Business</a>
+      <a href="#stack">Stack</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // ---- dual-view toggle ----
+  var toggle=document.getElementById('toggle');
+  var pill=document.getElementById('pill');
+  var btns=toggle.querySelectorAll('button');
+  var views={eng:document.getElementById('view-eng'),biz:document.getElementById('view-biz')};
+  function movePill(btn){pill.style.width=btn.offsetWidth+'px';pill.style.transform='translateX('+btn.offsetLeft+'px)';}
+  function activate(name){
+    btns.forEach(function(b){b.classList.toggle('active',b.dataset.view===name);if(b.dataset.view===name)movePill(b);});
+    for(var k in views){views[k].classList.toggle('active',k===name);}
+    // re-trigger reveal for newly shown view
+    requestAnimationFrame(function(){
+      views[name].querySelectorAll('.reveal').forEach(function(el){el.classList.add('in');});
+    });
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){activate(b.dataset.view);});});
+  // position pill on load
+  window.addEventListener('load',function(){movePill(toggle.querySelector('.active'));});
+  movePill(toggle.querySelector('.active'));
+
+  // ---- scroll reveal ----
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+  },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+
+  // ---- diagram motion: run only while in view (perf), CSS handles reduced-motion ----
+  var diagrams=document.querySelectorAll('.emit, .flow');
+  if(diagrams.length){
+    var anim=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ e.target.classList.toggle('anim-on', e.isIntersecting); });
+    },{threshold:.15});
+    diagrams.forEach(function(el){anim.observe(el);});
+  }
+})();
+</script>
+</body>
+</html>
