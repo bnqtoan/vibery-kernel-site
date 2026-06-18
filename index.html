@@ -56,6 +56,28 @@
   }
 
   /* ---------- NAV ---------- */
+  .wsbanner{
+    display:block;position:sticky;top:0;z-index:60;text-decoration:none;
+    background:linear-gradient(90deg,rgba(51,224,161,.14),rgba(51,224,161,.05));
+    border-bottom:1px solid rgba(51,224,161,.28);
+  }
+  .wsbanner-in{
+    max-width:1120px;margin:0 auto;padding:8px 24px;
+    display:flex;align-items:center;justify-content:center;gap:12px;
+    font-size:13.5px;color:var(--ink-soft);
+  }
+  .wsbanner-tag{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent);border:1px solid rgba(51,224,161,.35);border-radius:5px;
+    padding:2px 7px;flex:none;
+  }
+  .wsbanner-txt b{color:var(--ink)}
+  .wsbanner-cta{color:var(--accent);font-weight:600;flex:none;transition:opacity .15s}
+  .wsbanner:hover .wsbanner-cta{opacity:.8}
+  @media(max-width:680px){
+    .wsbanner-txt{display:none}
+    .wsbanner-in{gap:8px}
+  }
   header.nav{
     position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
     background:rgba(7,10,15,.72);border-bottom:1px solid var(--line);
@@ -579,6 +601,15 @@
 </style>
 </head>
 <body>
+
+<!-- WORKSHOP BANNER -->
+<a class="wsbanner" href="https://arealisticdreamer.com/events/agent-first-builder" target="_blank" rel="noopener">
+  <span class="wsbanner-in">
+    <span class="wsbanner-tag">Workshop</span>
+    <span class="wsbanner-txt"><b>Agent-First Builder</b> — learn to design &amp; build agent-first, multitenant systems from the ground up.</span>
+    <span class="wsbanner-cta">Reserve a seat&nbsp;→</span>
+  </span>
+</a>
 
 <!-- NAV -->
 <header class="nav">
