@@ -394,6 +394,11 @@
   .headless .targets{display:flex;gap:9px;flex-wrap:wrap}
   .headless .tgt{font-family:var(--mono);font-size:12px;color:var(--ink-soft);
     border:1px solid var(--line-2);border-radius:8px;padding:6px 11px;white-space:nowrap}
+  /* billing callout band — amber-tinted variant of the headless band */
+  .headless.billing{background:linear-gradient(100deg,#1a160c,#0e0b06)}
+  .headless.billing .hi{background:color-mix(in srgb,var(--amber) 16%,transparent);color:var(--amber)}
+  .headless.billing h3 span{color:var(--amber)}
+  .headless.billing .tgt{color:var(--amber)}
 
   /* capabilities matrix */
   .capgroups{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
@@ -546,6 +551,36 @@
     .emit-row{border-color:var(--line-2)}
     .emit-row .emit-ico{box-shadow:0 0 10px -4px var(--c)}
   }
+
+  /* ============ IDEA POOL ============ */
+  .ideagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+  @media(max-width:900px){.ideagrid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:620px){.ideagrid{grid-template-columns:1fr}}
+  .idea{
+    position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 20px 18px;transition:.2s;overflow:hidden;display:flex;flex-direction:column;
+  }
+  .idea::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent);
+    opacity:0;transition:opacity .2s}
+  .idea:hover{border-color:var(--line-2);transform:translateY(-3px);box-shadow:0 22px 50px -32px rgba(0,0,0,.9)}
+  .idea:hover::before{opacity:.7}
+  .idea .ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;margin-bottom:14px;
+    background:var(--accent-glow);color:var(--accent);flex:0 0 auto}
+  .idea .ico svg{width:19px;height:19px}
+  .idea h3{font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .idea p{font-size:13.5px;color:var(--ink-soft);margin:8px 0 0;line-height:1.5;flex:1 1 auto}
+  .idea .leans{display:flex;flex-wrap:wrap;gap:6px;margin-top:15px}
+  .idea .leans span{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;color:var(--accent);
+    background:var(--bg-soft);border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap;
+  }
+  .idea-close{
+    text-align:center;margin-top:34px;font-size:16px;color:var(--ink-soft);max-width:46em;
+    margin-left:auto;margin-right:auto;
+  }
+  .idea-close b{color:var(--ink)}
+  .idea-close code{font-family:var(--mono);font-size:14px;color:var(--accent);background:var(--bg-soft);
+    padding:1px 6px;border-radius:5px}
 </style>
 </head>
 <body>
@@ -565,7 +600,7 @@
       <a href="#flow">Request flow</a>
       <a href="#arch">Architecture</a>
       <a href="#capabilities">Capabilities</a>
-      <a href="#views">Engineering · Business</a>
+      <a href="#ideas">Idea Pool</a>
       <a href="#stack">Stack</a>
       <a class="nav-cta" href="https://www.facebook.com/tony.40047" target="_blank" rel="noopener">Let's talk →</a>
     </nav>
@@ -584,7 +619,7 @@
         Distilled from two production systems. You write one <code>Resource{}</code> — and a
         <b style="color:var(--ink)">REST API, MCP tools, and a CLI</b> are all emitted from it, over the same
         lifecycle, with tenancy, auth, events, audit, and metering built in.</p>
-      <p class="sub">SaaS-grade from line one — multitenancy, auth, billing-ready metering — and
+      <p class="sub">SaaS-grade from line one — multitenancy, auth, and a built-in billing engine (metering, subscriptions, payments) — and
         <b style="color:var(--ink)">AI-callable by construction</b>: every feature is an agent tool, because the MCP
         surface is emitted from the core, not retrofitted. One definition, three surfaces.</p>
       <div class="hero-pills">
@@ -626,10 +661,10 @@
   <!-- STAT BAR -->
   <div class="statbar">
     <div class="wrap stats">
-      <div class="stat"><div class="n"><span>28</span></div><div class="l">packages</div></div>
-      <div class="stat"><div class="n">~7.2<span>K</span></div><div class="l">lines of prod Go</div></div>
+      <div class="stat"><div class="n"><span>32</span></div><div class="l">packages</div></div>
+      <div class="stat"><div class="n">~7.2<span>K</span>+</div><div class="l">lines of prod Go</div></div>
       <div class="stat"><div class="n"><span>1:1</span></div><div class="l">test ratio</div></div>
-      <div class="stat"><div class="n"><span>266</span></div><div class="l">test functions · all green</div></div>
+      <div class="stat"><div class="n"><span>348</span></div><div class="l">test functions · all green</div></div>
       <div class="stat"><div class="n"><span>2</span></div><div class="l">production systems distilled</div></div>
     </div>
   </div>
@@ -868,7 +903,7 @@
 <section id="arch" style="background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
   <div class="wrap">
     <div class="sec-head reveal">
-      <span class="eyebrow">28 packages · 6 layers</span>
+      <span class="eyebrow">32 packages · 7 layers</span>
       <h2>The architecture, layered</h2>
       <p>Everything below the engine is mechanism. The <b style="color:var(--accent)">resource</b> engine composes
         it; <b style="color:var(--accent)">builtin</b> proves the composition by declaring the kernel's own
@@ -893,12 +928,22 @@
         </div>
       </div>
 
+      <div class="layer reveal" style="--lc:var(--amber)">
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Billing</span><span class="tier-d">— Lago-style billing engine: payments, metering, rating, invoicing</span></div>
+        <div class="pkgs">
+          <span class="pkg"><b>pay</b> <span class="x">— provider-agnostic payments: Stripe / Polar / SePay / VietQR, webhook-verified</span></span>
+          <span class="pkg"><b>plan</b> <span class="x">— plans / subscriptions / entitlements + plan→quota binder</span></span>
+          <span class="pkg"><b>rate</b> <span class="x">— 5 charge models (standard / graduated / volume / package / percentage)</span></span>
+          <span class="pkg"><b>invoice</b> <span class="x">— draft → finalize → pay → settle + proration + wallet/credit ledger</span></span>
+        </div>
+      </div>
+
       <div class="layer reveal" style="--lc:var(--event)">
-        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Async</span><span class="tier-d">— events, audit, quota, outbound, storage</span></div>
+        <div class="layer-head"><span class="layer-bar"></span><span class="tier">Async</span><span class="tier-d">— events, audit, metering, outbound, storage</span></div>
         <div class="pkgs">
           <span class="pkg"><b>bus</b> <span class="x">— NATS JetStream</span></span>
           <span class="pkg"><b>journal</b> <span class="x">— append-only audit</span></span>
-          <span class="pkg"><b>meter</b> <span class="x">— quota: stock + flow ceilings</span></span>
+          <span class="pkg"><b>meter</b> <span class="x">— usage metering (6 aggregation types) + quota ceilings</span></span>
           <span class="pkg"><b>migrate</b></span>
           <span class="pkg"><b>egress</b> <span class="x">— SSRF-safe outbound HTTP</span></span>
           <span class="pkg"><b>blob</b> <span class="x">— local + R2 storage</span></span>
@@ -942,6 +987,23 @@
     </div>
   </div>
 </section>
+
+<!-- BILLING CALLOUT -->
+<div class="headless billing">
+  <div class="wrap headless-in reveal">
+    <span class="hi"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/><path d="M6 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+    <div>
+      <h3>Billing built in — <span>not bolted on</span></h3>
+      <p>A complete Lago-style billing engine ships in the core: <b>usage metering, subscriptions, 5 charge models, and
+        Stripe / Polar / SePay / VietQR payments</b>. Declare a plan; entitlements enforce as quotas, usage rates,
+        invoices settle. The full pipeline — <b>usage → aggregate → rate → invoice → pay → settle</b> — is proven
+        end-to-end. Most frameworks make you bolt billing on; here it's part of the kernel.</p>
+    </div>
+    <div class="targets">
+      <span class="tgt">pay</span><span class="tgt">plan</span><span class="tgt">rate</span><span class="tgt">invoice</span><span class="tgt">meter</span>
+    </div>
+  </div>
+</div>
 
 <!-- CAPABILITIES MATRIX -->
 <section id="capabilities">
@@ -1002,6 +1064,20 @@
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Durable events</b> — NATS JetStream; ack/nak redelivery; events drive audit + automation.</span></div>
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Immutable audit trail</b> — append-only, event-sourced; every verb success → one audit row.</span></div>
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Event-driven automation</b> — rule engine reacts to events (<code>trigger</code>) without touching the producer.</span></div>
+        </div>
+      </div>
+
+      <!-- Billing & Monetization -->
+      <div class="capgroup wide reveal" style="--cg:var(--amber)">
+        <div class="capgroup-h">
+          <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/><path d="M6 15h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+          <h3>Billing &amp; Monetization</h3><span class="cg-n">4</span>
+        </div>
+        <div class="caplist">
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Payments, provider-agnostic</b> — Stripe, Polar, SePay, VietQR behind one interface; real webhook signature verification; multi-currency (incl. VND zero-decimal).</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Usage metering &amp; rating</b> — 6 aggregation types; 5 charge models (standard / graduated / volume / package / percentage); usage → line-items.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Subscriptions &amp; plan→quota</b> — plans bind entitlements; a paid plan auto-enforces the tenant's limits.</span></div>
+          <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Invoicing</b> — draft → finalize → pay → settle, with proration and a wallet / credit ledger.</span></div>
         </div>
       </div>
 
@@ -1098,7 +1174,7 @@
         <div class="card reveal">
           <div class="ci"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="6" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.7"/><circle cx="16" cy="12" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.7"/><circle cx="10" cy="18" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.7"/></svg></div>
           <h3>Tested against real infra</h3>
-          <p>266 test functions run against <b style="color:var(--ink)">ephemeral Postgres + NATS</b> spun up per
+          <p>348 test functions run against <b style="color:var(--ink)">ephemeral Postgres + NATS</b> spun up per
             test via testcontainers — not mocks. A 1:1 prod-to-test line ratio across ~7.2K lines each.</p>
         </div>
         <div class="card reveal">
@@ -1186,7 +1262,7 @@
         <div class="tg">vote ②</div>
       </div>
     </div>
-    <div class="votes-out reveal">Their intersection — and <b>only</b> their intersection — became the 28-package kernel.</div>
+    <div class="votes-out reveal">Their intersection — and <b>only</b> their intersection — became the 32-package kernel.</div>
   </div>
 </section>
 
@@ -1202,7 +1278,7 @@
     <div class="techgrid reveal">
       <div class="tcard">
         <div class="tn"><i></i>Go 1.26.1</div>
-        <div class="tw">The whole kernel — all 28 packages.</div>
+        <div class="tw">The whole kernel — all 32 packages.</div>
         <div class="ty"><b>Why:</b> compiles to a single static binary with no runtime dependencies.</div>
       </div>
       <div class="tcard">
@@ -1238,12 +1314,17 @@
       <div class="tcard">
         <div class="tn"><i></i>testcontainers-go</div>
         <div class="tw">Ephemeral Postgres + NATS, spun up per test.</div>
-        <div class="ty"><b>Why:</b> how 266 tests run against real infra, not mocks.</div>
+        <div class="ty"><b>Why:</b> how 348 tests run against real infra, not mocks.</div>
       </div>
       <div class="tcard">
         <div class="tn"><i></i>Model Context Protocol</div>
         <div class="tw">The AI-agent interface standard.</div>
         <div class="ty"><b>Why:</b> every resource is an MCP tool by construction.</div>
+      </div>
+      <div class="tcard">
+        <div class="tn"><i></i>Stripe · Polar · SePay · VietQR</div>
+        <div class="tw">Payment providers behind one provider-agnostic interface.</div>
+        <div class="ty"><b>Why:</b> webhook-verified, multi-currency billing without provider lock-in.</div>
       </div>
     </div>
     <div class="mcp-note reveal">
@@ -1251,6 +1332,94 @@
       <p><b>MCP-native (Model Context Protocol).</b> Every resource is an AI-callable tool by construction — the agent
         interface is emitted, never separately built or maintained.</p>
     </div>
+  </div>
+</section>
+
+<!-- IDEA POOL -->
+<section id="ideas">
+  <div class="wrap">
+    <div class="sec-head reveal" style="text-align:center;margin:0 auto 38px">
+      <span class="eyebrow">What you can build · ship in weeks, not months</span>
+      <h2>Idea Pool</h2>
+      <p style="margin-left:auto;margin-right:auto">Every product below is fast to build because the kernel already
+        ships the hard parts — multitenancy, PBAC, a built-in billing engine, audit, and an AI-callable MCP interface.
+        You write the domain; the platform is already there.</p>
+    </div>
+
+    <div class="ideagrid">
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <h3>Usage-billed API platform</h3>
+        <p>Sell any API with per-call metering, tiered plans, and payments built in — customers pay for exactly what they use, invoiced automatically.</p>
+        <div class="leans"><span>metering · rating</span><span>Stripe/Polar</span><span>invoicing</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <h3>Vertical AI agent SaaS</h3>
+        <p>A domain assistant — legal, support, ops — where every action is an MCP tool, so agents call your product natively.</p>
+        <div class="leans"><span>MCP</span><span>PBAC</span><span>audit</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="6" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="11" height="6" rx="1.5" stroke="currentColor" stroke-width="1.7"/><rect x="17" y="14" width="4" height="6" rx="1.5" stroke="currentColor" stroke-width="1.7"/></svg></span>
+        <h3>Multitenant B2B dashboard</h3>
+        <p>Per-tenant data isolated by Postgres RLS, role-scoped views via PBAC, and a compliance audit trail — out of the box.</p>
+        <div class="leans"><span>multitenant</span><span>PBAC</span><span>audit</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2a7 7 0 00-4 12.7V18h8v-3.3A7 7 0 0012 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 21h6M10 18v3M14 18v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+        <h3>Membership / community platform</h3>
+        <p>Plans gate features, quotas enforce limits, and subscriptions auto-bind entitlements — the billing-to-access loop is wired.</p>
+        <div class="leans"><span>subscriptions</span><span>plan→quota</span><span>payments</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4L1 8l4 4M11 4l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 20h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <h3>Internal tools / admin console</h3>
+        <p>Declare your resources and get a REST API, a CLI, and an AI ops-agent for free — three front-ends, one definition.</p>
+        <div class="leans"><span>three surfaces</span><span>PBAC</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8v5M9.5 11.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span>
+        <h3>Metered infrastructure product</h3>
+        <p>Sell storage, compute, or credits by usage with stock + flow ceilings, 5 charge models, and monthly invoices — metering is a kernel primitive.</p>
+        <div class="leans"><span>metering · 6 aggs</span><span>charge models</span><span>invoicing</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><circle cx="7" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M2 20c0-3 2.2-5 5-5s5 2 5 5M12 20c0-3 2.2-5 5-5s5 2 5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <h3>Marketplace backend</h3>
+        <p>Multi-seller tenancy, per-seller payments through the provider-agnostic layer, and scoped permissions per seller — isolation by default.</p>
+        <div class="leans"><span>multitenant</span><span>payments</span><span>PBAC</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M5 3h11l3 3v15H5V3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 9h6M9 13h6M9 17h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <h3>Compliance-grade record system</h3>
+        <p>Append-only audit journal, strict tenant isolation, and request-ID correlation end to end — defensible by construction.</p>
+        <div class="leans"><span>audit</span><span>multitenant</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16v11H4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M9 20h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+        <h3>AI-callable CRM / ops tool</h3>
+        <p>Your team's data, callable by Claude and agents as tools, policy-gated per role, with every change emitting an event.</p>
+        <div class="leans"><span>MCP</span><span>PBAC</span><span>events</span></div>
+      </div>
+
+      <div class="idea reveal">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="4" width="7" height="7" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="6" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="6" rx="1.4" stroke="currentColor" stroke-width="1.7"/></svg></span>
+        <h3>White-label SaaS for an agency</h3>
+        <p>Spin up an isolated tenant per client, bill each client separately with its own plan, run one codebase — tenancy and billing do the heavy lifting.</p>
+        <div class="leans"><span>multitenant</span><span>subscriptions</span><span>invoicing</span></div>
+      </div>
+    </div>
+
+    <p class="idea-close reveal">Every one of these starts from the same kernel — <b>declare your resources, plug in a
+      plan, ship</b>. The infrastructure is already built; what's left is your product.</p>
   </div>
 </section>
 
@@ -1281,7 +1450,7 @@
         <span><span style="color:var(--accent)">Vibery</span> Kernel</span>
       </div>
       <div class="meta" style="margin-top:10px">github.com/vibery-studio/kernel · Go <span>1.26.1</span></div>
-      <div class="meta" style="margin-top:4px">28 packages · full suite green against real Postgres + NATS · distilled from two production systems</div>
+      <div class="meta" style="margin-top:4px">32 packages · 348 tests green against real Postgres + NATS · distilled from two production systems</div>
     </div>
     <div class="foot-links">
       <a href="#how">How it works</a>
