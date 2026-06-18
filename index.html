@@ -401,22 +401,17 @@
   .headless.billing .tgt{color:var(--amber)}
 
   /* capabilities matrix */
-  .capgroups{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+  .capgroups{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;align-items:start}
   @media(max-width:880px){.capgroups{grid-template-columns:1fr}}
   .capgroup{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:22px;}
-  .capgroup.wide{grid-column:1/-1}
   .capgroup-h{display:flex;align-items:center;gap:11px;margin-bottom:6px;padding-bottom:14px;border-bottom:1px solid var(--line)}
   .capgroup-h .cg-ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;
     background:color-mix(in srgb,var(--cg) 14%,transparent);color:var(--cg)}
   .capgroup-h .cg-ic svg{width:18px;height:18px}
   .capgroup-h h3{font-size:16px;font-weight:700}
-  .capgroup-h .cg-n{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
   .caplist{display:grid;gap:0}
-  .capgroup.wide .caplist{grid-template-columns:repeat(2,1fr);gap:0 26px}
-  @media(max-width:680px){.capgroup.wide .caplist{grid-template-columns:1fr}}
   .capitem{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
   .capitem:last-child{border-bottom:none}
-  .capgroup.wide .capitem:nth-last-child(2){border-bottom:none}
   .capitem .ck{color:var(--cg);flex:0 0 auto;margin-top:1px}
   .capitem .ck svg{width:15px;height:15px;display:block}
   .capitem .ct{font-size:13.5px;color:var(--ink-soft);line-height:1.5}
@@ -1031,7 +1026,7 @@
       <div class="capgroup reveal" style="--cg:var(--tenant)">
         <div class="capgroup-h">
           <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6l8-4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-          <h3>Security &amp; Tenancy</h3><span class="cg-n">3</span>
+          <h3>Security &amp; Tenancy</h3>
         </div>
         <div class="caplist">
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Multitenancy</b> — Postgres RLS, fail-closed, tenant-isolated by default.</span></div>
@@ -1044,7 +1039,7 @@
       <div class="capgroup reveal" style="--cg:var(--mcp)">
         <div class="capgroup-h">
           <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-3.5 3.6-6 8-6s8 2.5 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-          <h3>Identity &amp; Access</h3><span class="cg-n">3</span>
+          <h3>Identity &amp; Access</h3>
         </div>
         <div class="caplist">
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Capability narrowing</b> — tokens intersect authority at issuance; can only narrow, never widen (least-privilege by construction).</span></div>
@@ -1057,7 +1052,7 @@
       <div class="capgroup reveal" style="--cg:var(--event)">
         <div class="capgroup-h">
           <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2L4 14h7l-2 8 9-12h-7l2-8z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-          <h3>Events &amp; Automation</h3><span class="cg-n">4</span>
+          <h3>Events &amp; Automation</h3>
         </div>
         <div class="caplist">
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>MCP-native</b> — every resource verb is an AI-callable tool; Code Mode JS sandbox (Goja) for tool execution.</span></div>
@@ -1068,10 +1063,10 @@
       </div>
 
       <!-- Billing & Monetization -->
-      <div class="capgroup wide reveal" style="--cg:var(--amber)">
+      <div class="capgroup reveal" style="--cg:var(--amber)">
         <div class="capgroup-h">
           <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.7"/><path d="M6 15h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-          <h3>Billing &amp; Monetization</h3><span class="cg-n">4</span>
+          <h3>Billing &amp; Monetization</h3>
         </div>
         <div class="caplist">
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Payments, provider-agnostic</b> — Stripe, Polar, SePay, VietQR behind one interface; real webhook signature verification; multi-currency (incl. VND zero-decimal).</span></div>
@@ -1085,7 +1080,7 @@
       <div class="capgroup reveal" style="--cg:var(--rest)">
         <div class="capgroup-h">
           <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="5" rx="1.4" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="11" width="18" height="5" rx="1.4" stroke="currentColor" stroke-width="1.7"/><path d="M7 6.5h.01M7 13.5h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-          <h3>Platform</h3><span class="cg-n">5</span>
+          <h3>Platform</h3>
         </div>
         <div class="caplist">
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Quota &amp; metering</b> — per-tenant stock + flow ceilings → HTTP 402, mechanism-only (you set the limits).</span></div>
@@ -1097,10 +1092,10 @@
       </div>
 
       <!-- Transport & Extensibility (wide) -->
-      <div class="capgroup wide reveal" style="--cg:var(--accent)">
+      <div class="capgroup reveal" style="--cg:var(--accent)">
         <div class="capgroup-h">
           <span class="cg-ic"><svg viewBox="0 0 24 24" fill="none"><path d="M9 4L4 9l5 5M15 4l5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 19h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-          <h3>Transport &amp; Extensibility</h3><span class="cg-n">3</span>
+          <h3>Transport &amp; Extensibility</h3>
         </div>
         <div class="caplist">
           <div class="capitem"><span class="ck"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="ct"><b>Validation pipeline</b> — fluent field-level accumulator; structured violations.</span></div>
