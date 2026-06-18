@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vibery Kernel — Declare a resource, ship a product surface</title>
-<meta name="description" content="A Go backend kernel distilled from two production systems. Declare one Resource; the kernel emits REST + MCP + tenancy + events + audit + metering — zero per-resource wiring." />
+<title>Vibery Kernel — AI-callable SaaS Kernel</title>
+<meta name="description" content="A Go kernel for building multitenant, AI-callable SaaS products. Distilled from two production systems. Declare one Resource; the kernel emits a REST API, MCP tools, and a CLI — plus tenancy, auth, events, audit, and metering — zero per-resource wiring." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -350,7 +350,7 @@
   .tcard .ty{font-size:12.5px;color:var(--ink-dim);margin-top:9px;border-top:1px solid var(--line);padding-top:9px}
   .tcard .ty b{color:var(--accent);font-weight:600}
 
-  /* agent-first eyebrow */
+  /* positioning eyebrow */
   .hero-eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;
     color:var(--accent);font-weight:500;margin:22px 0 14px;display:flex;align-items:center;gap:11px}
   .hero-eyebrow::before{content:"";width:26px;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
@@ -578,19 +578,20 @@
   <div class="wrap hero-grid">
     <div>
       <span class="badge"><span class="dot"></span> github.com/vibery-studio/kernel · Go 1.26.1</span>
-      <div class="hero-eyebrow">Agent-first backend framework</div>
+      <div class="hero-eyebrow">AI-callable SaaS Kernel</div>
       <h1>One definition.<br/><span class="grad">Three surfaces.</span></h1>
-      <p class="lede">An agent-first Go backend kernel distilled from two production systems. You write one
-        <code>Resource{}</code> — and a <b style="color:var(--ink)">REST API, MCP tools, and a CLI</b> are all
-        emitted from it, over the same lifecycle, with tenancy, events, and audit built in.</p>
-      <p class="sub"><b style="color:var(--ink)">API, MCP, and CLI from one definition</b> — your backend is
-        AI-callable by construction. Most frameworks bolt an API on for humans and maybe expose MCP later; here the
-        agent surface is emitted from the core, not retrofitted. Agents are first-class.</p>
+      <p class="lede">A Go kernel for building <b style="color:var(--ink)">multitenant, AI-callable SaaS products</b>.
+        Distilled from two production systems. You write one <code>Resource{}</code> — and a
+        <b style="color:var(--ink)">REST API, MCP tools, and a CLI</b> are all emitted from it, over the same
+        lifecycle, with tenancy, auth, events, audit, and metering built in.</p>
+      <p class="sub">SaaS-grade from line one — multitenancy, auth, billing-ready metering — and
+        <b style="color:var(--ink)">AI-callable by construction</b>: every feature is an agent tool, because the MCP
+        surface is emitted from the core, not retrofitted. One definition, three surfaces.</p>
       <div class="hero-pills">
+        <span class="hpill"><i></i>SaaS-grade: multitenant · auth · metering</span>
+        <span class="hpill"><i></i>AI-callable: MCP-native</span>
         <span class="hpill"><i></i>API · MCP · CLI from one definition</span>
         <span class="hpill"><i></i>Headless by construction</span>
-        <span class="hpill"><i></i>PBAC, deny-wins</span>
-        <span class="hpill"><i></i>RLS, fail-closed</span>
       </div>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#how">See what one declaration emits
@@ -1143,14 +1144,14 @@
         </div>
         <div class="bcard reveal" data-n="03">
           <h3>Proven, not promised</h3>
-          <p>A <span class="kw">1:1 test ratio against real infrastructure</span>, and <span class="kw">two live products</span>
-            already running on this DNA. The kernel isn't a bet on a clean abstraction — it's the residue of code that already
-            shipped and survived.</p>
+          <p>A <span class="kw">1:1 test ratio against real infrastructure</span>, and an architecture
+            <span class="kw">distilled from two production systems</span> that already shipped and survived. The kernel
+            isn't a bet on a clean abstraction — it's the hard-won core, extracted and tested in isolation.</p>
         </div>
         <div class="bcard reveal" data-n="04">
           <h3>It pays for itself</h3>
           <p>The kernel is funded by work <span class="kw">already required</span> — it funds itself with the next service,
-            while the two existing products keep running <span class="kw">untouched.</span> No rewrite, no migration tax.</p>
+            while the systems it was distilled from keep running <span class="kw">untouched.</span> No rewrite, no migration tax.</p>
         </div>
         <div class="bcard span reveal" data-n="05">
           <h3>"Declare a resource, ship a product surface."</h3>
@@ -1174,18 +1175,18 @@
     </div>
     <div class="votes reveal">
       <div class="vote">
-        <div class="nm">Sellkit</div>
-        <div class="ds">Multitenant commerce engine</div>
+        <div class="nm">Commerce platform</div>
+        <div class="ds">Multitenant commerce engine, in production</div>
         <div class="tg">vote ①</div>
       </div>
       <div class="op">∩</div>
       <div class="vote">
-        <div class="nm">Vibework</div>
-        <div class="ds">Ops / CRM / HR / PM platform</div>
+        <div class="nm">Operations platform</div>
+        <div class="ds">Multitenant ops / CRM / HR / PM, in production</div>
         <div class="tg">vote ②</div>
       </div>
     </div>
-    <div class="votes-out reveal">Their intersection — and <b>only</b> their intersection — became the 26-package kernel.</div>
+    <div class="votes-out reveal">Their intersection — and <b>only</b> their intersection — became the 28-package kernel.</div>
   </div>
 </section>
 
@@ -1276,7 +1277,7 @@
         <span><span style="color:var(--accent)">Vibery</span> Kernel</span>
       </div>
       <div class="meta" style="margin-top:10px">github.com/vibery-studio/kernel · Go <span>1.26.1</span></div>
-      <div class="meta" style="margin-top:4px">28 packages · full suite green against real Postgres + NATS · distilled from Sellkit + Vibework</div>
+      <div class="meta" style="margin-top:4px">28 packages · full suite green against real Postgres + NATS · distilled from two production systems</div>
     </div>
     <div class="foot-links">
       <a href="#how">How it works</a>
